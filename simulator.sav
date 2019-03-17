@@ -1,0 +1,40 @@
+[*]
+[*] GTKWave Analyzer v3.3.94 (w)1999-2018 BSI
+[*] Mon Dec 10 11:31:53 2018
+[*]
+[dumpfile] "/tmp/marc/simulator.ghw"
+[dumpfile_mtime] "Mon Dec 10 11:31:19 2018"
+[dumpfile_size] 11894713
+[savefile] "/home/marc/Src/VHDL/2018_2019/Julia_Set/simulator.sav"
+[timestart] 0
+[size] 2033 1937
+[pos] -1 -1
+*-39.184055 46756000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] top.
+[treeopen] top.simulator.
+[treeopen] top.simulator.top_level_unit.
+[sst_width] 335
+[signals_width] 188
+[sst_expanded] 1
+[sst_vpaned_height] 607
+@28
+top.simulator.top_level_unit.clk
+@800022
+#{top.simulator.led[3:0]} top.simulator.led[3] top.simulator.led[2] top.simulator.led[1] top.simulator.led[0]
+@28
+top.simulator.led[3]
+top.simulator.led[2]
+top.simulator.led[1]
+@29
+top.simulator.led[0]
+@1001200
+-group_end
+@28
+#{top.simulator.sw[1:0]} top.simulator.sw[1] top.simulator.sw[0]
+@22
+#{top.simulator.btn[3:0]} top.simulator.btn[3] top.simulator.btn[2] top.simulator.btn[1] top.simulator.btn[0]
+@28
+top.simulator.tx
+top.simulator.rx
+[pattern_trace] 1
+[pattern_trace] 0

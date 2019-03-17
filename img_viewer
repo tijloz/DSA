@@ -1,0 +1,149 @@
+#!/usr/bin/python3
+
+import os
+import select
+import serial
+import time
+import tkinter
+
+N_x      = 640
+N_y      = 480
+
+#N_x      = 1280
+#N_y      = 960
+
+root     = tkinter.Tk()
+running  = True
+x        = 0
+y        = 0
+fill_clr = 127
+
+def shutdown():
+    global running
+    running = False
+
+def fill(image, color):
+    r,g,b = color
+    width = image.width()
+    height = image.height()
+    hexcode = "#%02x%02x%02x" % (r,g,b)
+    horizontal_line = "{" + " ".join([hexcode]*width) + "}"
+    image.put(" ".join([horizontal_line]*height))
+
+l = ""
+
+def handle_data(s):
+    global x
+    global y
+    global l
+
+    for c in s:
+    
+        if c == '\n':
+
+            if l == "C":
+            
+                fill(img, (fill_clr,fill_clr,fill_clr))
+                x = 0
+                y = 0
+            
+            elif len(l) == 6:
+
+                img.put("#" + l, (x + 1, y + 1))
+                x = (x + 1) % N_x
+                
+                if (x == 0): 
+                
+                    y = (y + 1) % N_y
+                    
+            elif len(l) > 1:
+            
+                print("Unknown command:", l)
+
+            l = ""
+
+        else:
+        
+            l += c
+
+def read_data(f):
+
+    try:
+        s = ""
+        b = os.read(f, 4096)
+        
+        if len(b) == 0:
+            return 0
+
+        s = "".join(map(chr, b))
+    except OSError as e:
+        l = ""
+        return 0
+    
+    handle_data(s)
+    
+    return 1
+
+root.protocol("WM_DELETE_WINDOW", shutdown)
+root.bind('<Escape>', lambda e: shutdown())
+root.bind('q', lambda e: shutdown())
+root.bind('Q', lambda e: shutdown())
+
+root.title("Image Viewer")
+
+img = tkinter.PhotoImage(width=N_x,height=N_y)
+canvas = tkinter.Canvas(root, width=N_x, height=N_y)
+canvas.pack()
+canvas.create_image(0, 0, image=img, anchor=tkinter.NW)
+
+fill(img, (fill_clr,fill_clr,fill_clr))
+
+root.update()
+
+ser = serial.Serial()
+ser.baudrate = 921600
+ser.bytesize = serial.EIGHTBITS
+ser.parity   = serial.PARITY_NONE
+ser.stopbits = serial.STOPBITS_ONE
+ser.xonxoff  = 0
+ser.rtscts   = 0
+ser.timeout  = 1
+ser.port     = "/dev/ttyUSB1"
+
+try:
+    ser.open()
+    f_ser  = ser.fileno()
+    ser_port = True
+except:
+    print("Can't open serial port %s." % ser.name)
+    ser_port = False
+
+while running:
+
+    f_pipe = os.open("tx_pipe", os.O_RDONLY | os.O_NONBLOCK)
+
+    while running:
+
+        if ser_port:
+
+            rlist, wlist, xlist = select.select([f_pipe, f_ser], [], [], 0.1)
+            
+        else:
+
+            rlist, wlist, xlist = select.select([f_pipe], [], [], 0.1)
+        
+        if f_pipe in rlist:
+
+            if not read_data(f_pipe):
+            
+                break
+
+        if ser_port and (f_ser in rlist):
+
+            read_data(f_ser)
+
+        root.update()
+
+    os.close(f_pipe)
+
+root.destroy()
