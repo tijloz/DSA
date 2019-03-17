@@ -341,8 +341,8 @@ begin
                 when op_outr =>
 
                     bin_ins := "10000" & "0000" & reg_addr(ins.reg_src_a) &
-                     std_logic_vector(to_unsigned(ins.reg_src_b, 4)) &
-                     "0000000000000000000000000000000";
+                    "0000000000000000000000000000000" &
+                     std_logic_vector(to_unsigned(ins.reg_src_b, 4));
                     write(f_bin, bin_ins);
 
                 when op_jmp =>

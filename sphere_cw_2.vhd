@@ -12,14 +12,14 @@ end;
 
 architecture impl of top_level is
 
---  constant debug:   boolean  := true;
-    constant debug:   boolean  := false;
-    constant max_ins: positive := 60;
+  constant debug:   boolean  := true;
+--    constant debug:   boolean  := false;
+    constant max_ins: positive := 100000000;
 
-    type opcodes is (op_halt, op_nop, op_outr, op_jmp, op_jmp_lt, op_jmp_nz, 
-                     op_load, op_inc, op_dec, op_add, op_sub, op_mul, op_shr, 
+    type opcodes is (op_halt, op_nop, op_outr, op_jmp, op_jmp_lt, op_jmp_nz,
+                     op_load, op_inc, op_dec, op_add, op_sub, op_mul, op_shr,
                      op_shl, op_outc);
-                     
+
     subtype opcode_type is std_logic_vector(3 downto 0);
     attribute opc: integer;
 
@@ -76,7 +76,7 @@ architecture impl of top_level is
         variable l: line;
         variable s: integer;
     begin
-    
+
         if (pc = 0) then
 
             s := 0;
@@ -86,34 +86,34 @@ architecture impl of top_level is
             s := integer(floor(log10(real(pc))));
 
         end if;
-    
+
         for i in 1 to 4 - s loop
-        
+
             write(l, ' ');
-        
+
         end loop;
 
         write(l, int_to_str(pc));
 
         return l.all;
-    
+
     end function;
-    
+
     procedure log(s: string) is
     begin
-    
+
         if debug then
-        
+
             print(s);
-        
+
         end if;
-    
+
     end procedure;
-    
+
     type register_vector is array (natural range <>) of integer;
-    
+
     signal hlt: std_logic := '0';
-    
+
 begin
 
     process
@@ -136,22 +136,22 @@ begin
         write(f_tx, LF);
 
         hlt <= '0';
-        
+
         for r in reg'range loop
 
             reg(r) := 0;
-        
+
         end loop;
-            
+
         while true loop
-        
+
             ins_cnt := ins_cnt + 1;
-            
+
             if debug and (ins_cnt >= max_ins) then
                 hlt <= '1';
                 exit;
             end if;
-        
+
             ins       := rom(pc);
             opcode    := to_integer(unsigned(ins(15 downto 12)));
             reg_dest  := to_integer(unsigned(ins(11 downto 10)));
@@ -162,94 +162,94 @@ begin
             log(string'(format_pc(pc) & " : "));
 
             case opcode is
-            
+
                 when op_halt'opc =>
-                
+
                     log(string'("halt") & LF);
                     hlt <= '1';
                     exit;
-                
+
                 when op_nop'opc =>
-                
+
                     log(string'("nop"));
-                
+
                 when op_outr'opc =>
-                
+
                     if ins(1) = '0' then
 
                         write(f_tx, character'val(reg(reg_src_a) mod 256));
-                    
+
                     else
-                    
+
                         if ins(0) = '0' then
 
                             write(f_tx, to_hstring(std_logic_vector(to_unsigned(reg(reg_src_a) mod 16, 4))));
-                        
+
                         else
 
                             write(f_tx, to_hstring(std_logic_vector(to_unsigned((reg(reg_src_a) / 16) mod 16, 4))));
-                        
+
                         end if;
-                        
+
                     end if;
 
                 when op_jmp'opc =>
-                
+
                     log(string'("jump to " & int_to_str(jmp_dest)));
                     pc := jmp_dest - 1;
-                                
+
                 when op_jmp_lt'opc =>
-                
+
                     log(string'("(reg[" & int_to_str(reg_dest) & "] < reg[" &
                                 int_to_str(reg_src_a) & "]) is "));
 
                     if reg(reg_dest) < reg(reg_src_a) then
-                    
+
                         log(string'("true -> jump to " & int_to_str(jmp_dest)));
                         pc := jmp_dest - 1;
-                    
+
                     else
 
                         log(string'("false -> continue"));
 
                     end if;
-                                
+
                 when op_jmp_nz'opc =>
-                
+
                     log(string'("(reg[" & int_to_str(reg_dest) & "] /= 0) is "));
 
                     if reg(reg_dest) /= 0 then
-                    
+
                         log(string'("true -> jump to " & int_to_str(jmp_dest)));
                         pc := jmp_dest - 1;
-                    
+
                     else
 
                         log(string'("false -> continue"));
 
                     end if;
-                                
+
                 when op_load'opc =>
-                
+
                     imm_value := to_integer(signed(ins(9 downto 0)));
                     log(string'("load reg[" & int_to_str(reg_dest) & "] = " &
                                 "                = " & int_to_str(imm_value)));
                     reg(reg_dest) := imm_value;
 
                 when op_inc'opc =>
-                
+
                     log(string'("inc  reg[" & int_to_str(reg_dest)) & "] = " &
                                 "                = " & int_to_str(reg(reg_dest) + 1));
                     reg(reg_dest) := reg(reg_dest) + 1;
 
                 when op_dec'opc =>
-                
+
                     log(string'("dec  reg[" & int_to_str(reg_dest)) & "] = " &
                                 "                = " & int_to_str(reg(reg_dest) - 1));
                     reg(reg_dest) := reg(reg_dest) - 1;
 
                 when op_add'opc =>
-                
+
                     log(string'("add  reg[" & int_to_str(reg_dest)) & "] = reg[" &
                                 int_to_str(reg_src_a) & "] + reg[" &
                                 int_to_str(reg_src_b) & "] = " &
@@ -257,7 +257,7 @@ begin
                     reg(reg_dest) := reg(reg_src_a) + reg(reg_src_b);
 
                 when op_sub'opc =>
-                
+
                     log(string'("sub  reg[" & int_to_str(reg_dest)) & "] = reg[" &
                                 int_to_str(reg_src_a) & "] - reg[" &
                                 int_to_str(reg_src_b) & "] = " &
@@ -265,7 +265,7 @@ begin
                     reg(reg_dest) := reg(reg_src_a) - reg(reg_src_b);
 
                 when op_mul'opc =>
-                
+
                     log(string'("mul  reg[" & int_to_str(reg_dest)) & "] = reg[" &
                                 int_to_str(reg_src_a) & "] * reg[" &
                                 int_to_str(reg_src_b) & "] = " &
@@ -273,7 +273,7 @@ begin
                     reg(reg_dest) := reg(reg_src_a) * reg(reg_src_b);
 
                 when op_shr'opc =>
-                
+
                     imm_value := to_integer(unsigned(ins(7 downto 0)));
                     log(string'("shr  reg[" & int_to_str(reg_dest)) & "] = reg[" &
                                 int_to_str(reg_src_a) & "] >> " &
@@ -282,7 +282,7 @@ begin
                     reg(reg_dest) := reg(reg_src_a) / (2 ** imm_value);
 
                 when op_shl'opc =>
-                
+
                     imm_value := to_integer(unsigned(ins(7 downto 0)));
                     log(string'("shl  reg[" & int_to_str(reg_dest)) & "] = reg[" &
                                 int_to_str(reg_src_a) & "] << " &
@@ -291,26 +291,26 @@ begin
                     reg(reg_dest) := reg(reg_src_a) * (2 ** imm_value);
 
                 when op_outc'opc =>
-                
+
                     write(f_tx, character'val(to_integer(unsigned(ins(7 downto 0)))));
 
                 when others =>
-                
+
                     null;
-                
+
             end case;
-        
+
             if debug then
                 print(LF);
             end if;
 
             pc := pc + 1;
-        
+
         end loop;
-        
+
         file_close(f_tx);
         wait;
-    
+
     end process;
 
 end;
