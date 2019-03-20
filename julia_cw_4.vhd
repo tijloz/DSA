@@ -35,32 +35,37 @@ end;
 
 architecture impl of top_level is
 
-    type opcodes is (op_halt, op_nop, op_outr, op_jmp, op_jmp_lt, op_jmp_nz,
-                     op_load, op_inc, op_dec, op_add, op_sub, op_mul, op_shr,
-                     op_shl, op_outc);
+  type opcodes is (op_halt, op_nop, op_outr, op_jmp, op_jmp_lt, op_jmp_nz,
+                   op_load, op_cp, op_inc, op_dec, op_add, op_add_lt, op_sub,
+                   op_sub_lt, op_mul, op_mul_lt, op_shr, op_shl, op_outc, op_btfjc, op_btfjs);
 
-    subtype opcode_type is std_logic_vector(3 downto 0);
+    subtype opcode_type is std_logic_vector(4 downto 0);
     attribute opc: integer;
 
-    attribute opc of op_halt         : literal is 16#0#; -- 0000
-    attribute opc of op_nop          : literal is 16#5#; -- 0101
-    attribute opc of op_outr         : literal is 16#a#; -- 1010
-    attribute opc of op_jmp          : literal is 16#1#; -- 0001
-    attribute opc of op_jmp_lt       : literal is 16#6#; -- 0110
-    attribute opc of op_jmp_nz       : literal is 16#b#; -- 1011
---  attribute opc of op_unused       : literal is 16#2#; -- 0010
-    attribute opc of op_load         : literal is 16#7#; -- 0111
-    attribute opc of op_inc          : literal is 16#c#; -- 1100
-    attribute opc of op_dec          : literal is 16#3#; -- 0011
-    attribute opc of op_add          : literal is 16#8#; -- 1000
-    attribute opc of op_sub          : literal is 16#d#; -- 1101
-    attribute opc of op_mul          : literal is 16#4#; -- 0100
-    attribute opc of op_shr          : literal is 16#9#; -- 1001
-    attribute opc of op_shl          : literal is 16#e#; -- 1110
-    attribute opc of op_outc         : literal is 16#f#; -- 1111
+    attribute opc of op_add          : literal is 2#00000#;
+    attribute opc of op_add_lt       : literal is 2#00001#;
+    attribute opc of op_sub          : literal is 2#00010#;
+    attribute opc of op_sub_lt       : literal is 2#00011#;
+    attribute opc of op_inc          : literal is 2#00110#;
+    attribute opc of op_dec          : literal is 2#00100#;
+    attribute opc of op_mul          : literal is 2#01100#;
+    attribute opc of op_mul_lt       : literal is 2#01101#;
+    attribute opc of op_shr          : literal is 2#01010#;
+    attribute opc of op_shl          : literal is 2#01110#;
+    attribute opc of op_nop          : literal is 2#01111#;
+    attribute opc of op_btfjc        : literal is 2#10010#;
+    attribute opc of op_btfjs        : literal is 2#10011#;
+    attribute opc of op_outr         : literal is 2#10000#;
+    attribute opc of op_outc         : literal is 2#10001#;
+    attribute opc of op_cp           : literal is 2#11000#;
+    attribute opc of op_load         : literal is 2#11001#;
+    attribute opc of op_jmp_lt       : literal is 2#11100#;
+    attribute opc of op_jmp_nz       : literal is 2#11101#;
+    attribute opc of op_jmp          : literal is 2#11110#;
+    attribute opc of op_halt         : literal is 2#11111#;
 
     constant rom_size: positive := 128;
-    subtype  rom_word is std_logic_vector(15 downto 0);
+    subtype  rom_word is std_logic_vector(47 downto 0);
     subtype  rom_addr is unsigned(n_bits(rom_size - 1) - 1 downto 0);
     type     rom_type is array (0 to (rom_size - 1)) of rom_word;
 
@@ -73,11 +78,19 @@ architecture impl of top_level is
     begin
 
         while not endfile(rom_file) loop
-            read(rom_file, c);
-            d(15 downto 8) := chr_to_byte(c);
-            read(rom_file, c);
-            d( 7 downto 0) := chr_to_byte(c);
-            rom_data(i) := d;
+          read(rom_file, c);
+          d(47 downto 40) := chr_to_byte(c);
+          read(rom_file, c);
+          d(39 downto 32) := chr_to_byte(c);
+          read(rom_file, c);
+          d(31 downto 24) := chr_to_byte(c);
+          read(rom_file, c);
+          d(23 downto 16) := chr_to_byte(c);
+          read(rom_file, c);
+          d(15 downto 8) := chr_to_byte(c);
+          read(rom_file, c);
+          d( 7 downto 0) := chr_to_byte(c);
+          rom_data(i) := d;
             i := i + 1;
         end loop;
 
@@ -90,10 +103,10 @@ architecture impl of top_level is
 
     end function;
 
-    signal   rom: rom_type := init_rom_from_file("sphere.bin");
+    signal   rom: rom_type := init_rom_from_file("julia.bin");
 
     constant reg_size: positive := 4;
-    subtype  reg_word is signed(31 downto 0);
+    subtype  reg_word is signed(47 downto 0);
     subtype  reg_addr is unsigned(n_bits(reg_size - 1) - 1 downto 0);
     type     reg_type is array (0 to (reg_size - 1)) of reg_word;
 
@@ -278,10 +291,10 @@ begin
 
     ins       <= rom_a_dout;
     jmp_dest  <= unsigned(ins(jmp_dest'range));
-    opcode    <= to_integer(unsigned(ins(15 downto 12)));
-    reg_dest  <= unsigned(ins(11 downto 10));
-    reg_src_a <= unsigned(ins( 9 downto  8));
-    reg_src_b <= unsigned(ins( 7 downto  6));
+    opcode    <= to_integer(unsigned(ins(47 downto 43)));
+    reg_dest  <= unsigned(ins(42 downto 39));
+    reg_src_a <= unsigned(ins(38 downto 35));
+    reg_src_b <= unsigned(ins(34 downto 31));
     idx       <= to_integer(unsigned(ins( 4 downto  0)));
 
     process(en(1), opcode, reg_dest, reg_src_a, reg_src_b)

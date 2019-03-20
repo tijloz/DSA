@@ -104,7 +104,7 @@ architecture impl of top_level is
     constant rom: rom_type := init_rom_from_file("julia.bin");
 
     constant reg_size: positive := 4;
-    subtype  reg_word is signed(31 downto 0);
+    subtype  reg_word is signed(47 downto 0);
     type     reg_type is array (0 to (reg_size - 1)) of reg_word;
 
     signal   reg: reg_type := (others => (others => '0'));
@@ -195,7 +195,7 @@ begin
 
                 when op_load'opc =>
 
-                    reg(reg_dest) <= resize(signed(ins(31 downto 0)), reg_word'length);
+                    reg(reg_dest) <= resize(signed(ins(31 downto 0)), 32);
 
                 when op_cp'opc =>
 

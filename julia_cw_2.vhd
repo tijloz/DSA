@@ -12,8 +12,8 @@ end;
 
 architecture impl of top_level is
 
-  constant debug:   boolean  := true;
---    constant debug:   boolean  := false;
+--  constant debug:   boolean  := true;
+    constant debug:   boolean  := false;
     constant max_ins: positive := 100000000;
 
     type opcodes is (op_halt, op_nop, op_outr, op_jmp, op_jmp_lt, op_jmp_nz,
@@ -144,6 +144,7 @@ begin
         file     f_tx:      chr_file;
         variable b:         byte;
         variable c:         character;
+        variable multiply:  signed (63 downto 0);
 
     begin
         file_open(f_tx, "tx_pipe", write_mode);
@@ -302,19 +303,24 @@ begin
 
                 when op_mul'opc =>
 
+                        multiply := (to_signed(reg(reg_src_a),32) * to_signed(reg(reg_src_b),32));
+                        reg(reg_dest) := to_integer(multiply(51 downto 20));
+
                     log(string'("mul  reg[" & int_to_str(reg_dest)) & "] = reg[" &
                                 int_to_str(reg_src_a) & "] * reg[" &
                                 int_to_str(reg_src_b) & "] = " &
-                                int_to_str(to_integer((to_signed(reg(reg_src_a),32) * to_signed(reg(reg_src_b),32))/1048576)));
-                    reg(reg_dest) := to_integer((to_signed(reg(reg_src_a),32) * to_signed(reg(reg_src_b),32))/1048576);
+                                int_to_str(to_integer(multiply(51 downto 20))));
 
                 when op_mul_lt'opc =>
                     imm_value := to_integer(signed(ins(31 downto 0)));
+
+                    multiply := (to_signed(reg(reg_src_a),32) * to_signed((imm_value),32));
+                    reg(reg_dest) := to_integer(multiply(51 downto 20));
+
                     log(string'("mul_lt  reg[" & int_to_str(reg_dest)) & "] = reg[" &
                                 int_to_str(reg_src_a) & "] * [" &
                                 int_to_str(imm_value) & "] = " &
-                                int_to_str(to_integer((to_signed(reg(reg_src_a),32) * to_signed((imm_value),32))/1048576)));
-                    reg(reg_dest) := to_integer((to_signed(reg(reg_src_a),32) * to_signed((imm_value),32))/1048576);
+                                int_to_str(to_integer(multiply(51 downto 20))));
 
                 when op_shr'opc =>
 

@@ -32,6 +32,7 @@ all help:
 	@echo "make julia_cw_1               	- run Julia coursework 1"
 	@echo "make julia_cw_2               	- run Julia coursework 2"
 	@echo "make julia_cw_3               	- run Julia coursework 3"
+	@echo "make julia_cw_4               	- run Julia coursework 4"
 	@echo "make julia_cw_1_float         	- run Sphere coursework 1 float converted"
 	@echo "make fixed_point_test         	- run fixed_point_test"
 	@echo "make test.bin									- generate bin file"
@@ -237,6 +238,29 @@ sphere_cw_4: tx_pipe sphere.bin simulator.vhd config_sim.vhd sphere_cw_4.vhd std
 	@[ -d $(TMP_DIR) ] || mkdir $(TMP_DIR)
 
 	ghdl -i std_logic_textio.vhd util.vhd simulator.vhd config_sim.vhd sphere_cw_4.vhd
+	ghdl -m -Punisim --warn-unused -fexplicit --ieee=synopsys simulator 2>&1
+	ghdl -r simulator  --stats --disp-order
+	@rm -f simulator
+
+julia.hex: julia.asm assembler.vhd mnemonics.vhd util.vhd
+	@echo "Assembler running..."
+
+julia_cw_4_wave: tx_pipe sphere.bin simulator.vhd config_sim.vhd julia_cw_4.vhd std_logic_textio.vhd util.vhd
+	@echo "Simulation running..."
+
+	@[ -d $(TMP_DIR) ] || mkdir $(TMP_DIR)
+
+	ghdl -i std_logic_textio.vhd util.vhd simulator.vhd config_sim.vhd julia_cw_4.vhd
+	ghdl -m -Punisim --warn-unused -fexplicit --ieee=synopsys simulator 2>&1
+	ghdl -r simulator --wave=$(TMP_DIR)/simulator.ghw --stop-time=10ms
+	@rm -f simulator
+
+julia_cw_4: tx_pipe sphere.bin simulator.vhd config_sim.vhd julia_cw_4.vhd std_logic_textio.vhd util.vhd
+	@echo "Simulation running..."
+
+	@[ -d $(TMP_DIR) ] || mkdir $(TMP_DIR)
+
+	ghdl -i std_logic_textio.vhd util.vhd simulator.vhd config_sim.vhd julia_cw_4.vhd
 	ghdl -m -Punisim --warn-unused -fexplicit --ieee=synopsys simulator 2>&1
 	ghdl -r simulator  --stats --disp-order
 	@rm -f simulator
